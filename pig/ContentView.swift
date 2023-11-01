@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var TurnScore = 0
     @State private var GameScore = 0
+    @State private var gameOver = false
     @State private var randomValue = 0
     @State private var rotation = 0.0
     var body: some View {
@@ -27,20 +28,46 @@ struct ContentView: View {
                 
                 CustomText(text: "Turn Score:\(TurnScore)")
                 HStack {
+                    
                     Button ("Roll") {
-                        
+                        chooseRandom (times: 3)
+                        withAnimation(.interpolatingSpring(stiffness: 10, damping: 2)) {
+                            rotation += 360
+                            
+                            
+                        }
                     }
                     .buttonStyle (CustomButtonStyle ())
-                    Button ("Hold") {
-                        
+                    
+                    Button("Hold") {
+                        GameScore += TurnScore
+                        endTurn()
+                        withAnimation(.easeInOut(duration: 1)) {
+                            rotation += 360
+                        }
+                        if GameScore >= 100 {
+                        gameOver = true
+                        }
                     }
-                    .buttonStyle(CustomButtonStyle())
+                    .buttonStyle (CustomButtonStyle ())
                 }
                 
-                CustomText(text: "Turn Score: \(GameScore)")
+                CustomText(text: "Game Score: \(GameScore)")
+                NavigationLink("How to Play", destination: InstructionsView())
+                    .font (Font.custom ("Marker Felt", size: 24))
+                .padding ()
                 Spacer ()
             }
         }
+        .alert(isPresented: $gameOver, content: {
+            Alert (title: Text ("You won the game!"), dismissButton:
+                    .destructive (Text("Play again"), action: {
+                        withAnimation (Animation.default) {
+                            GameScore = 0
+                            gameOver = false
+                        }
+                    }))
+        })
     }
     func endTurn() {
         TurnScore = 0
@@ -64,10 +91,9 @@ struct ContentView: View {
             }
         }
     }
-    
 }
 
-    struct ContentView_Previews: PreviewProvider {
+struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
@@ -85,5 +111,30 @@ struct CustomButtonStyle: ButtonStyle {
             .padding () .background(.red).opacity (configuration.isPressed ? 0.0: 1.0)
             .foregroundColor (.white)
             .clipShape (RoundedRectangle (cornerRadius: 10))
+    }
+}
+struct InstructionsView: View {
+    var body: some View {
+        ZStack {
+            
+            Color.gray.opacity(0.7).ignoresSafeArea ()
+            VStack {
+                Image ("Pig").resizable().frame (width: 150, height: 150)
+                Text ("Pig").font(.title)
+                VStack (alignment: .leading) {
+                    Text ("In the game of Pig, players take individual turns. Each turn, a player repeatedly rolls a single die until either a pig is rolled or the player decides to \"hold\".")
+                        .padding ()
+                    Text ("If the player rolls a pig, they score nothing, and it becomes the next player's turn.")
+                        .padding()
+                    Text("If the player rolls any other number, it is added to their turn total, and the player's turn continues.")
+                        .padding()
+                    Text ("If a player chooses to \"hold\", their turn total is added to their game score, and it becomes the next player's turn.")
+                    padding ()
+                    Text ("A player wins the game when the game score becomes 100 or more on their turn.")
+                        .padding ()
+                }
+                Spacer()
+            }
+        }
     }
 }
